@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Merger MVP</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        input[type="file"] {
+            margin: 15px 0;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        li {
+            background: #f1f1f1;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: grab;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        li.dragging {
+            opacity: 0.5;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        .hint {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        #errorbox {
+            display: none;
+            background: #ffe0e0;
+            color: #900;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .loading {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>PDF MERGER</h2>
+
+        <input type="file" id="fileInput" multiple accept="application/pdf">
+
+        <ul id="fileList"></ul>
+
+        <div id="errorbox"></div>
+
+        <div class="hint">Drag files to set merge order</div>
+
+        <button id="mergeBtn">Merge PDFs</button>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById("fileInput");
+        const fileList = document.getElementById("fileList");
+        const mergeBtn = document.getElementById("mergeBtn");
+
+        let filesArray = [];
+
+        function showError(message) {
+            const box = document.getElementById("errorbox");
+            box.textContent = message;
+            box.style.display = "block";
+        }
+
+        function clearError(){
+            const box = document.getElementById("errorbox");
+            box.style.display = "none";
+            box.textContent = "";
+        }
+
+        fileInput.addEventListener("change", () => {
+            filesArray = Array.from(fileInput.files);
+            renderList();
+        });
+
+        function renderList() {
+            fileList.innerHTML = "";
+
+            filesArray.forEach((file, index) => {
+                const li = document.createElement("li");
+                li.textContent = `${index + 1}. ${file.name}`;
+                li.draggable = true;
+
+                li.addEventListener("dragstart", () => {
+                    li.classList.add("dragging");
+                    li.dataset.index = index;
+                });
+
+                li.addEventListener("dragend", () => {
+                    li.classList.remove("dragging");
+                });
+
+                li.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                });
+
+                li.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    const fromIndex = e.dataTransfer.getData("text") || li.dataset.index;
+                    const toIndex = index;
+
+                    const moved = filesArray.splice(fromIndex, 1)[0];
+                    filesArray.splice(toIndex, 0, moved);
+
+                    renderList();
+                });
+
+                li.addEventListener("dragstart", (e) => {
+                    e.dataTransfer.setData("text", index);
+                });
+
+                fileList.appendChild(li);
+            });
+        }
+
+        mergeBtn.addEventListener("click", async () => {
+            clearError();
+
+
+            if (filesArray.length <2) {
+                showError("Please select at least two PDF files to merge.");
+                return;
+            }
+
+            mergeBtn.disabled = true;
+            mergeBtn.textContent = "Merging...";
+            mergeBtn.classList.add("loading");
+
+            const formData = new FormData();
+            filesArray.forEach(file => {
+                formData.append("files", file);
+            });
+
+            try {
+                const response = await fetch("/merge", {
+                    method: "POST",
+                    headers: {
+                        "X-API-Key": "dangerous_api_key"  // Replace with your actual API key
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const err = await response.json();
+                    showError(err.detail || "An error occured during merging.");
+                    return;
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "merged.pdf";
+                a.click();
+
+                window.URL.revokeObjectURL(url);
+            } catch(err){
+                showError("Network error. Please refresh and try again.");
+            } finally {
+                mergeBtn.disabled = false;
+                mergeBtn.textContent = "Merge PDFs";
+                mergeBtn.classList.remove("loading");
+            }
+        });
+    </script>
+</body>
+</html>
