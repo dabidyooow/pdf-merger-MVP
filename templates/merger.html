@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Merger MVP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background: #222;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .tool-box {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 40px;
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 14px;
+            color: #777;
+        }
+
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #drop-zone {
+            border: 2px dashed #999;
+            padding: 30px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            background: #fafafa;
+        }
+
+        #drop-zone.dragover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        #file-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 15px;
+        }
+
+        #file-list li {
+            background: #eee;
+            padding: 10px;
+            margin-bottom: 5px;
+            cursor: grab;
+        }
+        .ad-slot {
+            background: #f0f0f0;
+            border: 1px dashed #ccc;
+            text-align: center;
+            color: #777;
+            font-size: 13px;
+            margin: 30px 0;
+            padding: 20px;
+        }
+
+        .ad-top {
+            min-height: 90px;   /* leaderboard */
+        }
+
+        .ad-middle {
+            min-height: 250px;  /* rectangle */
+        }
+
+        .ad-bottom {
+            min-height: 90px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Free PDF Merger</h1>
+        <p>Merge multiple PDF files into one document online — fast and secure.</p>
+    </header>
+
+        <!-- for ads later -->
+    <div class="ad-slot ad-top">
+        <span>Advertisement</span>
+    </div>
+
+    <div class="container">
+        <!-- TOOL -->
+        <div class="tool-box">
+            <h2>Merge Your PDFs</h2>
+
+            <form id="merge-form">
+                <div id="drop-zone">
+                    <p>Drag & drop PDF files here<br>or click to select</p>
+                    <input type="file" id="file-input" multiple accept=".pdf" hidden>
+                </div>
+
+                <ul id="file-list"></ul>
+
+                <button type="submit">Merge PDFs</button>
+
+                <p id="error" style="color:red;"></p>
+            </form>
+
+            <p style="font-size: 14px; color: #666;">
+                Files are processed securely and deleted automatically.
+            </p>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <h2>How to Merge PDF Files</h2>
+            <p>
+                Upload two or more PDF files, arrange them in the order you want,
+                and click the merge button. Your merged PDF will be ready in seconds.
+            </p>
+
+            <h2>Why Use Our PDF Merger?</h2>
+            <ul>
+                <li>100% free to use</li>
+                <li>No account required</li>
+                <li>Fast and secure processing</li>
+            </ul>
+
+            <h2>Is my data safe?</h2>
+            <p>
+                Yes. Uploaded files are used only for merging and are automatically
+                deleted after processing.
+            </p>
+        </div>
+        <!-- for ads later -->
+        <div class="ad-slot ad-bottom">
+            <span>Advertisement</span>
+        </div>
+        <footer>
+            © 2026 PDF Merger • Privacy Policy • Terms • Contact
+        </footer>
+    </div>
+    <script>
+        const dropZone = document.getElementById("drop-zone");
+        const fileInput = document.getElementById("file-input");
+        const fileList = document.getElementById("file-list");
+        const form = document.getElementById("merge-form");
+        const errorBox = document.getElementById("error");
+
+        let files = [];
+
+        dropZone.onclick = () => fileInput.click();
+
+        dropZone.ondragover = e => {
+            e.preventDefault();
+            dropZone.classList.add("dragover");
+        };
+
+        dropZone.ondragleave = () => {
+            dropZone.classList.remove("dragover");
+        };
+
+        dropZone.ondrop = e => {
+            e.preventDefault();
+            dropZone.classList.remove("dragover");
+            handleFiles(e.dataTransfer.files);
+        };
+
+        fileInput.onchange = e => handleFiles(e.target.files);
+
+        function handleFiles(selectedFiles) {
+            for (let file of selectedFiles) {
+                if (file.type !== "application/pdf") {
+                    errorBox.textContent = "Only PDF files are allowed.";
+                    return;
+                }
+                files.push(file);
+            }
+            renderList();
+        }
+
+        function renderList() {
+            fileList.innerHTML = "";
+            files.forEach((file, index) => {
+                const li = document.createElement("li");
+                li.textContent = file.name;
+                li.draggable = true;
+
+                li.ondragstart = () => draggedIndex = index;
+                li.ondragover = e => e.preventDefault();
+                li.ondrop = () => {
+                    const draggedFile = files[draggedIndex];
+                    files.splice(draggedIndex, 1);
+                    files.splice(index, 0, draggedFile);
+                    renderList();
+                };
+
+                fileList.appendChild(li);
+            });
+        }
+
+        form.onsubmit = async e => {
+            e.preventDefault();
+            errorBox.textContent = "";
+
+            if (files.length < 2) {
+                errorBox.textContent = "Please upload at least two PDFs.";
+                return;
+            }
+
+            const formData = new FormData();
+            files.forEach(file => formData.append("files", file));
+
+            const response = await fetch("/merge", {
+                method: "POST",
+                headers: {
+                    "X-API-Key": "dangerous_api_key"
+                },
+                body: formData
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                errorBox.textContent = err.detail || "Merge failed.";
+                return;
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "merged.pdf";
+            a.click();
+        };
+        </script>
+</body>
+</html>
