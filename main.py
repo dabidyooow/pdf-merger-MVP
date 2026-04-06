@@ -20,9 +20,13 @@ def merger_page(request: Request):
     return templates.TemplateResponse("merger.html", {"request": request, "menu": [{"name": "Merger"}]})
 
 
-@app.get("/", response_class = HTMLResponse)
+@app.get("/")
 def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "menu": [{"name": "Home"}]})
+    context = {
+        "request": request,
+        "menu": [{"name": "Home"}
+        ]
+    }
 
 @app.get("/contact", response_class = HTMLResponse)
 def contact(request: Request):

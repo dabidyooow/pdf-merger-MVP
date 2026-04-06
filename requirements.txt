@@ -1,5 +1,6 @@
-fastapi
-uvicorn
-pypdf
-jinja2
-python-multipart
+fastapi==0.111.1
+uvicorn==0.24.0
+pypdf2==3.1.1
+jinja2==3.1.3
+python-multipart==0.0.6
+starlette==0.30.0
