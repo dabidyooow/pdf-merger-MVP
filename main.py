@@ -30,18 +30,5 @@ def home(request: Request):
     }
     return templates.TemplateResponse("index.html", context)
 
-@app.get("/contact", response_class = HTMLResponse)
-def contact(request: Request):
-    return templates.TemplateResponse("contact.html", {"request": request, "menu": [{"name": "Contact"}]})
-@app.get("/privacy", response_class = HTMLResponse)
-def privacy(request: Request):
-    return templates.TemplateResponse("privacy.html", {"request": request, "menu": [{"name": "Privacy Policy"}]})
-
-@app.get("/terms", response_class = HTMLResponse)
-def terms(request: Request):
-    return templates.TemplateResponse("terms.html", {"request": request, "menu": [{"name": "Terms of Service"}]})
-@app.get("/about", response_class = HTMLResponse)
-def about(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request, "menu": [{"name": "About"}]})
 app.include_router(merger.router)
 
