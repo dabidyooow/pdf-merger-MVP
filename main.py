@@ -24,9 +24,11 @@ def merger_page(request: Request):
 def home(request: Request):
     context = {
         "request": request,
-        "menu": [{"name": "Home"}
-        ]
+        "menu": [{"name": "Home", "url": "/"}, {"name": "Merger", "url": "/merger"}, {"name": "Contact", "url": "/contact"}, {"name": "Privacy Policy", "url": "/privacy"}, {"name": "Terms of Service", "url": "/terms"}, {"name": "About", "url": "/about"}
+        ],
+        "title": "PDF Merger - Home"
     }
+    return templates.TemplateResponse("index.html", context)
 
 @app.get("/contact", response_class = HTMLResponse)
 def contact(request: Request):
