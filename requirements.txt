@@ -1,6 +1,5 @@
 fastapi
 uvicorn
-PyPDF2
 jinja2
 python-multipart
 starlette
