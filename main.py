@@ -25,7 +25,6 @@ def merger_page(request: Request):
         "merger.html",
         {
             "request": request,
-            "menu": [{"name": "Merger"}]
         }
     )
 
@@ -33,9 +32,6 @@ def merger_page(request: Request):
 def home(request: Request):
     context = {
         "request": request,
-        "menu": [
-            {"name": "Home", "url": "/"}
-        ],
         "title": "PDF Merger - Home"
     }
     return templates.TemplateResponse("index.html", context)
@@ -44,9 +40,6 @@ def home(request: Request):
 def contact(request: Request):
     context = {
         "request": request,
-        "menu": [
-            {"name": "Contact", "url": "/contact"}
-        ],
         "title": "PDF Merger - Contact Us"
     }
     return templates.TemplateResponse("contact.html", context)
