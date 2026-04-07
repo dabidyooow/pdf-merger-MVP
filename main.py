@@ -19,31 +19,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # ROUTES
 # ---------------------------------------
 
+@app.get("/", response_class=HTMLResponse)
+def home(request: Request):
+    return templates.TemplateResponse(
+        name="index.html",
+        context={
+            "request": request
+        }
+    )
+
 @app.get("/merger", response_class=HTMLResponse)
 def merger_page(request: Request):
     return templates.TemplateResponse(
-        "merger.html",
-        {
-            "request": request,
+        name="merger.html",
+        context={
+            "request": request
         }
     )
-
-@app.get("/")
-def home(request: Request):
-    return templates.TemplateResponse(
-        "index.html",
-        {
-        "request": request,
-        "title": "PDF Merger - Home"
-        }
-    )
-
-@app.get("/contact")
-def contact(request: Request):
-    context = {
-        "request": request,
-        "title": "PDF Merger - Contact Us"
-    }
-    return templates.TemplateResponse("contact.html", context)
 
 app.include_router(merger.router)
