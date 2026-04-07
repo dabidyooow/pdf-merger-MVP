@@ -15,6 +15,10 @@ templates = Jinja2Templates(directory="templates")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# ---------------------------------------
+# ROUTES
+# ---------------------------------------
+
 @app.get("/merger", response_class=HTMLResponse)
 def merger_page(request: Request):
     return templates.TemplateResponse(

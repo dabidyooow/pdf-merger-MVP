@@ -1,66 +1,78 @@
-from fastapi import FastAPI, APIRouter, UploadFile, File, Request, HTTPException, Depends, BackgroundTasks, Header
+from fastapi import APIRouter, UploadFile, File, Request, HTTPException, Depends, BackgroundTasks, Header
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse, HTMLResponse
-import os
 from typing import List
 from pypdf import PdfWriter
+import os
 import uuid
 
 router = APIRouter()
-
-app = FastAPI()
-
 templates = Jinja2Templates(directory="templates")
 
-@router.get("/merger")
-def pdf_merger_page(request: Request):
-    return templates.TemplateResponse(
-        "merger.html",
-        {"request": request}
-    )
-
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+#Constants
+MAX_FILE_SIZE = 5 * 1024 * 1024 #5MB
 UPLOAD_DIR = "uploads"
 OUTPUT_DIR = "output"
+API_KEY = "dangerous_api_key" # change this later for security
 
-API_KEY = "dangerous_api_key"  # Replace with your actual API key
-
+# Ensure folders exist
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+# ---------------------------------------
+# ROUTES
+# ---------------------------------------
+
+
+
+# ---------------------------------------
+# HELPERS
+# ---------------------------------------
 def verify_api_key(x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
         raise HTTPException(
             status_code = 401,
             detail = "Invalid API Key"
         )
-    
+
 def validate_pdfs(files: List[UploadFile] = File(...)):
     if len(files) < 2:
-        raise HTTPException(status_code = 400, detail = "At least two PDF files are required for merging.")
+        raise HTTPException(
+            status_code = 400,
+            detail = "At least 2 PDF files are required for merging."
+        )
+    
     for file in files:
-        if not file.filename.lower().endswith("pdf"):
-            raise HTTPException(status_code = 400, detail=f"File {file.filename} is not a PDF.")
-        
+        if not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(
+                status_code = 400,
+                detail = f"{file.filename} is not a PDF."
+            )
         file.file.seek(0, os.SEEK_END)
         size = file.file.tell()
         file.file.seek(0)
 
         if size > MAX_FILE_SIZE:
-            raise HTTPException(status_code= 413, detail=f"{file.filename} exceeds 5mb limit.")
-        
+            raise HTTPException(
+                status_code = 413,
+                detail = f"{file.filename} exceeds 5MB limit."
+            )
     return files
-    
-def delete_file(path: str):
+
+def delete_files(path: str):
     if os.path.exists(path):
         os.remove(path)
 
-    
+# ---------------------------------------
+# MERGE ENDPOINT
+# ---------------------------------------
+
 @router.post("/merge")
-async def merge_pdfs(background_tasks: BackgroundTasks,
-                     files: List[UploadFile] = Depends(validate_pdfs),
-                     _: str = Depends(verify_api_key)
-                     ):
+async def merge_pdfs(
+    background_tasks: BackgroundTasks,
+    files: List[UploadFile] = Depends(validate_pdfs),
+    _: str = Depends(verify_api_key)
+):
     writer = PdfWriter()
     saved_files = []
 
@@ -70,22 +82,27 @@ async def merge_pdfs(background_tasks: BackgroundTasks,
 
         with open(temp_path, "wb") as f:
             f.write(await file.read())
-
+        
         writer.append(temp_path)
         saved_files.append(temp_path)
 
-    output_path = os.path.join(OUTPUT_DIR, f"merged_{uuid.uuid4()}.pdf")
+    output_path = os.path.join(
+        OUTPUT_DIR,
+        f"merged_{uuid.uuid4()}.pdf"
+    )
 
     with open(output_path, "wb") as f:
         writer.write(f)
 
+    #cleanup uploaded files
     for path in saved_files:
         os.remove(path)
 
-    background_tasks.add_task(delete_file, output_path)
+    #delete output later
+    background_tasks.add_task(delete_files, output_path)
 
     return FileResponse(
         output_path,
-        media_type="application/pdf",
-        filename="merged.pdf"
+        media_type = "application/pdf",
+        filename = "merged.pdf"
     )
