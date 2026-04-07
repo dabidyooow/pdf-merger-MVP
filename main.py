@@ -30,11 +30,13 @@ def merger_page(request: Request):
 
 @app.get("/")
 def home(request: Request):
-    context = {
+    return templates.TemplateResponse(
+        "index.html",
+        {
         "request": request,
         "title": "PDF Merger - Home"
-    }
-    return templates.TemplateResponse("index.html", context)
+        }
+    )
 
 @app.get("/contact")
 def contact(request: Request):
