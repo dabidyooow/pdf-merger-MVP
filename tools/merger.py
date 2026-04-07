@@ -7,7 +7,6 @@ import os
 import uuid
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
 
 #Constants
 MAX_FILE_SIZE = 5 * 1024 * 1024 #5MB

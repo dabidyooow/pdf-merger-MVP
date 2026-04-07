@@ -12,6 +12,7 @@ from tools import merger
 app = FastAPI()
 
 templates = Jinja2Templates(directory="templates")
+templates.env.cache = {} # Disable Jinja2 caching for development
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -22,19 +23,15 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse(
-        name="index.html",
-        context={
-            "request": request
-        }
+        "index.html",
+        {"request": request}
     )
 
 @app.get("/merger", response_class=HTMLResponse)
 def merger_page(request: Request):
     return templates.TemplateResponse(
-        name="merger.html",
-        context={
-            "request": request
-        }
+        "index.html",
+        {"request": request}
     )
 
 app.include_router(merger.router)
