@@ -35,4 +35,31 @@ def merger_page(request: Request):
         "merger.html"
     )
 
+@app.get("/contact", response_class=HTMLResponse)
+def contact_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "contact.html"
+    )
+
+@app.get("/about", response_class=HTMLResponse)
+def about_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "about.html"
+    )
+
+@app.get("/terms", response_class=HTMLResponse)
+def terms_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "terms.html"
+    )
+
+@app.get("/privacy", response_class=HTMLResponse)
+def privacy_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "privacy.html"
+    )
 app.include_router(merger.router)
