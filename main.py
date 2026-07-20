@@ -62,4 +62,5 @@ def privacy_page(request: Request):
         request,
         "privacy.html"
     )
+
 app.include_router(merger.router)
