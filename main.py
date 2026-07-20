@@ -8,6 +8,7 @@ import uuid
 import os
 
 from tools import merger
+from tools import unmerge
 
 app = FastAPI()
 
@@ -33,6 +34,13 @@ def merger_page(request: Request):
     return templates.TemplateResponse(
         request,
         "merger.html"
+    )
+
+@app.get("/unmerge", response_class=HTMLResponse)
+def merger_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "unmerge.html"
     )
 
 @app.get("/contact", response_class=HTMLResponse)
@@ -64,3 +72,4 @@ def privacy_page(request: Request):
     )
 
 app.include_router(merger.router)
+app.include_router(unmerge.router)

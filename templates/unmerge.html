@@ -4,7 +4,7 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1334706627079644"
      crossorigin="anonymous"></script>
     <meta charset="UTF-8">
-    <title>PDF Merger MVP</title>
+    <title>PDF Splitter MVP</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -104,8 +104,8 @@
 </head>
 <body>
     <header>
-        <h1>Free PDF Merger</h1>
-        <p>Merge multiple PDF files into one document online — fast and secure.</p>
+        <h1>Free PDF Splitter</h1>
+        <p>Split PDF files into individual pages online — fast and secure.</p>
     </header>
 
         <!-- for ads later -->
@@ -116,17 +116,36 @@
     <div class="container">
         <!-- TOOL -->
         <div class="tool-box">
-            <h2>Merge Your PDFs</h2>
+            <h2>Split Your PDFs</h2>
 
             <form id="merge-form">
                 <div id="drop-zone">
                     <p>Drag & drop PDF files here<br>or click to select</p>
-                    <input type="file" id="file-input" multiple accept=".pdf" hidden>
+                    <input type="file" id="file-input" accept=".pdf" hidden>
                 </div>
 
                 <ul id="file-list"></ul>
 
-                <button type="submit">Merge PDFs</button>
+                <div id="pdf-info" style="display:none; margin:20px 0">
+                    <p><strong>Filename:</strong><span id="pdf-name"></span></p>
+                    <p><strong>Pages:</strong><span id="pdf-pages"></span></p>
+                </div>
+
+                <H3>How do you like to split?</H3>
+
+                <label>
+                    <input type="radio" name="splitType" value="every" checked>
+                    Split every page
+                </label>
+                <br>
+                <label>
+                    <input type="radio" name="splitType" value="range" disabled>
+                    Split by page range (coming soon!)
+                </label>
+                <br>
+                <input type="text" id="page-range" placeholder="Example: 1,3,5-8" style="display:none;">
+
+                <button type="submit">Split PDFs</button>
 
                 <p id="error" style="color:red;"></p>
             </form>
@@ -172,7 +191,7 @@
         const form = document.getElementById("merge-form");
         const errorBox = document.getElementById("error");
 
-        let files = [];
+        let selectedFile = null;
 
         dropZone.onclick = () => fileInput.click();
 
@@ -193,50 +212,40 @@
 
         fileInput.onchange = e => handleFiles(e.target.files);
 
-        function handleFiles(selectedFiles) {
-            for (let file of selectedFiles) {
-                if (file.type !== "application/pdf") {
-                    errorBox.textContent = "Only PDF files are allowed.";
-                    return;
-                }
-                files.push(file);
+        async function handleFiles(selectedFiles){
+            errorBox.textContent = "";
+
+            const file = selectedFiles[0];
+
+            if (!file) return;
+
+            if(file.type !== "application/pdf"){
+                errorBox.textContent = "Only PDF files are allowed.";
             }
+
+            selectedFile = file;
+
             renderList();
+            await loadPdfInfo(file);
+
         }
 
         function renderList() {
             fileList.innerHTML = "";
-            files.forEach((file, index) => {
-                const li = document.createElement("li");
-                li.textContent = file.name;
-                li.draggable = true;
 
-                li.ondragstart = () => draggedIndex = index;
-                li.ondragover = e => e.preventDefault();
-                li.ondrop = () => {
-                    const draggedFile = files[draggedIndex];
-                    files.splice(draggedIndex, 1);
-                    files.splice(index, 0, draggedFile);
-                    renderList();
-                };
+            if(!selectedFile) return;
 
-                fileList.appendChild(li);
-            });
+            const li = document.createElement("li");
+            li.textContent = selectedFile.name;
+
+            fileList.appendChild(li);
         }
 
-        form.onsubmit = async e => {
-            e.preventDefault();
-            errorBox.textContent = "";
-
-            if (files.length < 2) {
-                errorBox.textContent = "Please upload at least two PDFs.";
-                return;
-            }
-
+        async function loadPdfInfo(file) {
             const formData = new FormData();
-            files.forEach(file => formData.append("files", file));
+            formData.append("file", file);
 
-            const response = await fetch("/merge", {
+            const response = await fetch("/pdf-info", {
                 method: "POST",
                 headers: {
                     "X-API-Key": "dangerous_api_key"
@@ -244,17 +253,66 @@
                 body: formData
             });
 
-            if (!response.ok) {
+            if (!response.ok){
                 const err = await response.json();
-                errorBox.textContent = err.detail || "Merge failed.";
+                errorBox.textContent = err.detail || "Failed to load PDF Info";
+                return;
+            }
+
+            const data = await response.json();
+
+
+            document.getElementById("pdf-name").textContent = data.filename;
+            document.getElementById("pdf-pages").textContent = data.pages;
+            document.getElementById("pdf-info").style.display = "block";
+        }
+
+
+        const pageRange = document.getElementById("page-range");
+        
+        document.querySelectorAll('input[name="splitType"]').forEach(radio => {
+            radio.addEventListener('change', () => {
+                pageRange.style.display = 
+                radio.value === "range" && radio.checked
+                ? "inline-block"
+                : "none";
+            });
+        });
+        
+        form.onsubmit = async e => {
+            e.preventDefault();
+
+            if (!selectedFile) {
+                errorBox.textContent = "Please select a PDF file first.";
+                return;
+            }
+
+            errorBox.textContent = "";
+
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            const response = await fetch("/split", {
+                method: "POST",
+                headers: {
+                    "X-API-Key": "dangerous_api_key"
+                },
+                body: formData
+            });
+
+            if (!response.ok){
+                const err = await response.json();
+                errorBox.textContent = err.detail || "Failed to split PDF";
                 return;
             }
 
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
+
             a.href = url;
-            a.download = "merged.pdf";
+            a.download = "split_result.zip";
+
             a.click();
         };
         </script>
